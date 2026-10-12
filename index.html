@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1620">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="AR">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AR — your artwork comes alive</title>
+<meta name="description" content="Point your phone at a painting, a poster or a photo and see a video or an image come alive on top of it. You prepare your own works on your device." />
+<link rel="canonical" href="https://ar.dotrino.com/" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:locale:alternate" content="es_ES" />
+<meta property="og:site_name" content="Dotrino" />
+<meta property="og:title" content="AR — your artwork comes alive" />
+<meta property="og:description" content="Point your phone at a painting, a poster or a photo and see a video or an image come alive on top of it." />
+<meta property="og:url" content="https://ar.dotrino.com/" />
+<meta property="og:image" content="https://ar.dotrino.com/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AR — your artwork comes alive" />
+<meta name="twitter:description" content="Point your phone at a painting, a poster or a photo and see a video or an image come alive on top of it." />
+<meta name="twitter:image" content="https://ar.dotrino.com/og.jpg" />
+<!-- Analítica cookieless autohosteada (GoatCounter); no cuenta en localhost/LAN. -->
+<script>window.goatcounter={path:function(p){return location.hostname+p}}</script>
+<script data-goatcounter="https://goat.dotrino.com/count" async src="https://goat.dotrino.com/count.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "AR — your artwork comes alive",
+  "url": "https://ar.dotrino.com/",
+  "description": "Point your phone at a painting, a poster or a photo and see a video or an image come alive on top of it.",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "publisher": { "@type": "Organization", "name": "Dotrino", "url": "https://dotrino.com/" }
+}
+</script>
+</head>
+<body>
+
+  <dotrino-topbar brand="AR" icon="./icon.svg"
+    support-repo="imdotrino/dotrino-ar"
+    support-discord="https://discord.gg/D648uq7cth"
+    profile>
+    <dotrino-install slot="end" class="cc-install sm"></dotrino-install>
+  </dotrino-topbar>
+
+  <nav class="tabs" role="tablist" data-i18n-aria="tabsAria">
+    <button class="tab" role="tab" id="tab-view" aria-controls="view-view" data-i18n="tabView" data-testid="tab-view">View</button>
+    <button class="tab" role="tab" id="tab-works" aria-controls="view-works" data-i18n="tabWorks" data-testid="tab-works">My works</button>
+  </nav>
+
+  <section class="view" id="view-view" role="tabpanel" aria-labelledby="tab-view">
+    <div class="stage" id="stage" data-testid="stage">
+      <div class="stage-idle" id="stageIdle">
+        <p id="idleText" data-testid="idle-text"></p>
+        <button type="button" class="btn-primary" id="btnStart" data-testid="start-camera"></button>
+        <button type="button" class="btn" id="btnRetryView" data-i18n="retry" hidden>Try again</button>
+      </div>
+      <div class="stage-hud" id="stageHud" hidden>
+        <span class="hud-text" id="hudText" role="status" aria-live="polite" data-testid="hud-text"></span>
+        <button type="button" class="btn" id="btnSound" data-testid="sound"></button>
+        <button type="button" class="btn" id="btnStop" data-i18n="stop" data-testid="stop-camera">Close the camera</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view view-scroll" id="view-works" role="tabpanel" aria-labelledby="tab-works" hidden>
+    <div class="page">
+      <p class="status" id="worksStatus" data-testid="works-status"></p>
+      <button type="button" class="btn" id="btnRetryWorks" data-i18n="retry" hidden>Try again</button>
+      <ul class="works" id="worksList" data-testid="works-list"></ul>
+
+      <form class="card" id="workForm" data-testid="work-form">
+        <h2 data-i18n="addH">Add a work</h2>
+        <label class="field">
+          <span data-i18n="photo">Photo of the work</span>
+          <input type="file" id="workPhoto" accept="image/*" data-testid="work-photo">
+        </label>
+        <label class="field">
+          <span data-i18n="overlay">What shows on top (image or video)</span>
+          <input type="file" id="workOverlay" accept="image/*,video/*" data-testid="work-overlay">
+        </label>
+        <label class="field">
+          <span data-i18n="title">Name</span>
+          <input type="text" id="workTitle" maxlength="80" data-i18n-ph="titlePh" autocomplete="off" data-testid="work-title">
+        </label>
+        <p class="hint" id="workHint" role="status" aria-live="polite" data-testid="work-hint"></p>
+        <button type="submit" class="btn-primary" id="btnAddWork" data-i18n="add" data-testid="add-work">Add</button>
+      </form>
+    </div>
+  </section>
+
+  <dialog class="dialog" id="confirmDialog" aria-labelledby="confirmTitle">
+    <form method="dialog">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmText"></p>
+      <div class="dialog-actions">
+        <button class="btn" id="confirmCancel" value="cancel" data-testid="dialog-cancel"></button>
+        <button class="btn-primary" id="confirmOk" value="ok" data-testid="dialog-ok"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" data-testid="toast"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
