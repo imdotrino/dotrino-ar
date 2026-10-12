@@ -7,6 +7,8 @@ en `https://ar.dotrino.com/`.
 **Estado: prototipo.** Sirve para medir el seguimiento en teléfonos reales. Las obras y
 sus archivos viven en el aparato que las dio de alta; todavía no se comparten.
 
+Cómo se usa: [wiki.dotrino.com/apps/realidad-aumentada](https://wiki.dotrino.com/apps/realidad-aumentada/).
+
 ## Cómo funciona
 
 | Pieza | Dónde | Qué hace |
