@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import { execSync } from 'node:child_process'
+import prerender from '@dotrino/prerender/vite'
 
 // base './' → rutas relativas, para servir bajo ar.dotrino.com y bajo el mirror
 // dotrino.github.io/dotrino-ar/. Los assets PWA viven en public/.
@@ -16,7 +17,9 @@ function commitMeta () {
 }
 
 export default defineConfig({
-  plugins: [commitMeta()],
+  plugins: [
+    // El HTML llega con contenido para quien lo lee sin ejecutar JavaScript.
+    prerender(), commitMeta()],
   base: './',
   server: { port: 3230, host: true },
 })
