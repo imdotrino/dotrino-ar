@@ -1,13 +1,13 @@
 :root {
-  --bg: #0b1620;
-  --panel: #13222f;
-  --line: #24384a;
-  --text: #e8f1f7;
-  --muted: #93a8b8;
-  --accent: #4cc2f0;
-  --accent-ink: #04202d;
-  --danger: #ff8f8f;
-  color-scheme: dark;
+  /* Colores del ecosistema (@dotrino/theme, CONVENCIONES §5). */
+  --bg: var(--dt-bg);
+  --panel: var(--dt-surface);
+  --line: var(--dt-line-soft);
+  --text: var(--dt-text);
+  --muted: var(--dt-text-dim);
+  --accent: var(--dt-accent);
+  --accent-ink: var(--dt-accent-ink);
+  --danger: var(--dt-error);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -19,13 +19,11 @@ body {
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font: 16px/1.4 var(--dt-font);
   overflow: hidden;
 }
 
 dotrino-topbar {
-  --dotrino-topbar-bg: var(--bg);
-  --dotrino-topbar-fg: var(--text);
   flex: none;
 }
 
@@ -79,7 +77,7 @@ button { font: inherit; user-select: none; }
   padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
 }
-.hud-text { flex: 1; min-width: 8ch; font-weight: 600; text-shadow: 0 1px 3px #000; }
+.hud-text { flex: 1; min-width: 8ch; font-weight: 600; color: #fff; text-shadow: 0 1px 3px #000; }
 
 /* ---------- Mis obras ---------- */
 
