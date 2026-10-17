@@ -34,7 +34,7 @@ async function renderList () {
   }
   if (works === null) { status.textContent = t('idleLoading'); list.innerHTML = ''; return }
   status.textContent = works.length ? '' : t('worksEmpty')
-  const thumbs = await Promise.all(works.map(w => getBlob(w.photo.cid).then(b => URL.createObjectURL(b), e => {
+  const thumbs = await Promise.all(works.map(w => getBlob(w.photo).then(b => URL.createObjectURL(b), e => {
     console.error('[ar] missing photo for work', w.id, e)
     return ''
   })))

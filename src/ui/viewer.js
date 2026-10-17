@@ -64,7 +64,7 @@ async function start () {
   try {
     // Lo pesado (MindAR + three) se baja al abrir la cámara, no al abrir la app.
     const [{ startTracker }, { createOverlay }] = await Promise.all([import('../ar/tracker.js'), import('../ar/overlay.js')])
-    const targets = mergeTargets(await Promise.all(works.map(w => getBlob(w.target.cid).then(b => b.arrayBuffer()))))
+    const targets = mergeTargets(await Promise.all(works.map(w => getBlob(w.target).then(b => b.arrayBuffer()))))
     tracker = await startTracker({
       container: $('stage'),
       targets,
@@ -73,7 +73,7 @@ async function start () {
       onFrame: dt => { for (const o of overlays) o.tick(dt) }
     })
     overlays = await Promise.all(works.map(async (w, i) => {
-      const overlay = await createOverlay({ blob: await getBlob(w.overlay.cid), kind: w.overlay.kind, aspect: tracker.anchors[i].aspect })
+      const overlay = await createOverlay({ blob: await getBlob(w.overlay), kind: w.overlay.kind, aspect: tracker.anchors[i].aspect })
       overlay.setMuted(muted)
       tracker.anchors[i].group.add(overlay.mesh)
       return overlay

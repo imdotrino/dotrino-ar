@@ -55,7 +55,7 @@ export async function removeWork (work) {
   await store.removeMessage(THREAD, work.id)
   // Un mismo archivo puede estar en dos obras: sus bytes se quedan mientras alguna los use.
   const inUse = new Set((await listWorks()).flatMap(w => [w.photo.cid, w.target.cid, w.overlay.cid]))
-  for (const cid of [work.photo.cid, work.target.cid, work.overlay.cid]) {
-    if (!inUse.has(cid)) await removeBlob(cid)
+  for (const entry of [work.photo, work.target, work.overlay]) {
+    if (!inUse.has(entry.cid)) await removeBlob(entry)
   }
 }
