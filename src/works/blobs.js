@@ -7,25 +7,13 @@
 // Sin node no se pierde nada: la app sigue con lo del aparato. Lo que no cabe por el plano
 // de control del content (256 KB hoy) se queda solo en el aparato hasta que el content
 // acepte archivos grandes.
-import { ContentClient } from '@dotrino/content-client'
+import { nodeSession } from '@dotrino/content-client/session'
 import { putLocal, getLocal, removeLocal } from '@dotrino/content-client/local'
 import { getIdentity } from '../services/identity.js'
 
-let node = null
-let tried = false
-
-/** El node del usuario, si tiene uno encendido. Se intenta una vez por sesión. */
-async function userNode () {
-  if (node || tried) return node
-  tried = true
-  try {
-    node = await ContentClient.connectWithIdentity(await getIdentity())
-  } catch (e) {
-    // Sin node (o sin bóveda enlazada) es lo normal: se sigue con lo del aparato.
-    if (e?.code !== 'no-node' && e?.code !== 'no-vault') console.warn('[ar] content node unreachable:', e?.message || e)
-  }
-  return node
-}
+// El node de esta sesión: se intenta una vez; sin node se sigue con lo del aparato.
+const session = nodeSession(getIdentity, { onError: (e) => console.warn('[ar] content node unreachable:', e?.message || e) })
+const userNode = () => session.node()
 
 /**
  * Guarda un archivo de una obra.
