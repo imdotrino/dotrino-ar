@@ -5,19 +5,28 @@ import { toast, confirmDialog } from './dialog.js'
 import { listWorks, addWork, removeWork } from '../works/repo.js'
 import { getBlob } from '../works/blobs.js'
 
+/** @type {import('../works/repo.js').Work[] | null} */
 let works = null
+/** @type {unknown} */
 let loadError = null
+/** @type {string | null} */
 let busy = null // texto de lo que se está haciendo, o null
+/** @type {string[]} */
 let thumbUrls = []
+/** @type {() => void} */
 let onChange = () => {}
 
+/** @param {string} id */
+const input = id => /** @type {HTMLInputElement} */ ($(id))
+
 function renderForm () {
-  const photo = $('workPhoto').files[0]
-  const overlay = $('workOverlay').files[0]
+  const photo = input('workPhoto').files?.[0]
+  const overlay = input('workOverlay').files?.[0]
   const hint = $('workHint')
   const ready = Boolean(photo && overlay)
-  $('btnAddWork').disabled = !ready || Boolean(busy) || works === null
-  for (const id of ['workTitle', 'workPhoto', 'workOverlay']) $(id).disabled = Boolean(busy)
+  const add = /** @type {HTMLButtonElement} */ ($('btnAddWork'))
+  add.disabled = !ready || Boolean(busy) || works === null
+  for (const id of ['workTitle', 'workPhoto', 'workOverlay']) input(id).disabled = Boolean(busy)
   hint.textContent = busy || (!photo ? t('needPhoto') : !overlay ? t('needOverlay') : '')
 }
 
@@ -33,13 +42,14 @@ async function renderList () {
     return
   }
   if (works === null) { status.textContent = t('idleLoading'); list.innerHTML = ''; return }
-  status.textContent = works.length ? '' : t('worksEmpty')
-  const thumbs = await Promise.all(works.map(w => getBlob(w.photo).then(b => URL.createObjectURL(b), e => {
+  const all = works
+  status.textContent = all.length ? '' : t('worksEmpty')
+  const thumbs = await Promise.all(all.map(w => getBlob(w.photo).then(b => URL.createObjectURL(b), e => {
     console.error('[ar] missing photo for work', w.id, e)
     return ''
   })))
   thumbUrls = thumbs.filter(Boolean)
-  list.innerHTML = works.map((w, i) => `
+  list.innerHTML = all.map((w, i) => `
     <li class="work" data-work-id="${escapeHtml(w.id)}">
       <img class="work-thumb" src="${thumbs[i]}" alt="">
       <div class="work-info">
@@ -63,12 +73,13 @@ export async function refresh () {
   renderForm()
 }
 
+/** @param {SubmitEvent} ev */
 async function submit (ev) {
   ev.preventDefault()
-  const photo = $('workPhoto').files[0]
-  const overlay = $('workOverlay').files[0]
+  const photo = input('workPhoto').files?.[0]
+  const overlay = input('workOverlay').files?.[0]
   if (!photo || !overlay || busy) return
-  const title = $('workTitle').value.trim() || photo.name.replace(/\.[^.]+$/, '')
+  const title = input('workTitle').value.trim() || photo.name.replace(/\.[^.]+$/, '')
   try {
     busy = t('preparing', { percent: 0 })
     renderForm()
@@ -80,7 +91,8 @@ async function submit (ev) {
     busy = t('saving')
     renderForm()
     await addWork({ title, photo, target, overlay })
-    $('workForm').reset()
+    const form = /** @type {HTMLFormElement} */ ($('workForm'))
+    form.reset()
     toast(t('added', { title }))
   } catch (e) {
     console.error('[ar] could not add the work:', e)
@@ -92,8 +104,9 @@ async function submit (ev) {
   onChange()
 }
 
+/** @param {string} id */
 async function remove (id) {
-  const work = works.find(w => w.id === id)
+  const work = works?.find(w => w.id === id)
   if (!work) throw new Error(`unknown work: ${id}`)
   const ok = await confirmDialog({
     title: t('removeTitle', { title: work.title }), text: t('removeText'), ok: t('remove'), cancel: t('cancel')
@@ -110,6 +123,7 @@ async function remove (id) {
   onChange()
 }
 
+/** @param {{ changed: () => void }} opts  se llama cuando cambia la lista de obras */
 export function initWorks ({ changed }) {
   onChange = changed
   $('workForm').addEventListener('submit', submit)
@@ -117,7 +131,7 @@ export function initWorks ({ changed }) {
   $('workOverlay').addEventListener('change', renderForm)
   $('btnRetryWorks').addEventListener('click', refresh)
   $('worksList').addEventListener('click', ev => {
-    const id = ev.target.closest('[data-remove]')?.dataset.remove
+    const id = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest('[data-remove]'))?.dataset.remove
     if (id) remove(id)
   })
   renderForm()

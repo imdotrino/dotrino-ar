@@ -2,8 +2,10 @@
 import { createVaultReputation } from '@dotrino/reputation'
 import { getIdentity } from './identity.js'
 
+/** @type {import('@dotrino/reputation').VaultReputation | null} */
 let reputation = null
 
+/** @returns {Promise<import('@dotrino/reputation').VaultReputation | null>} */
 export async function getReputation () {
   if (reputation) return reputation
   const id = await getIdentity()

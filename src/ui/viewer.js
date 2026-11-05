@@ -5,11 +5,15 @@ import { listWorks } from '../works/repo.js'
 import { getBlob } from '../works/blobs.js'
 import { mergeTargets } from '../ar/targets.js'
 
-/** idle | starting | running */
+/** @type {'idle' | 'starting' | 'running'} */
 let state = 'idle'
+/** @type {import('../works/repo.js').Work[] | null} */
 let works = null // null = todavía no se leyeron
+/** @type {unknown} */
 let loadError = null
+/** @type {Awaited<ReturnType<typeof import('../ar/tracker.js').startTracker>> | null} */
 let tracker = null
+/** @type {Awaited<ReturnType<typeof import('../ar/overlay.js').createOverlay>>[]} */
 let overlays = []
 let found = -1
 let muted = true
@@ -18,7 +22,7 @@ function render () {
   const running = state === 'running'
   $('stageIdle').hidden = running
   $('stageHud').hidden = !running
-  const start = $('btnStart')
+  const start = /** @type {HTMLButtonElement} */ ($('btnStart'))
   const idle = $('idleText')
   start.textContent = t(state === 'starting' ? 'starting' : 'start')
   if (loadError) {
@@ -35,9 +39,9 @@ function render () {
     start.disabled = state !== 'idle'
   }
   $('btnRetryView').hidden = !loadError
-  $('hudText').textContent = found >= 0 ? works[found].title : t('scanning')
-  $('stage').dataset.found = found >= 0 ? works[found].id : ''
-  const sound = $('btnSound')
+  $('hudText').textContent = found >= 0 && works ? works[found].title : t('scanning')
+  $('stage').dataset.found = found >= 0 && works ? works[found].id : ''
+  const sound = /** @type {HTMLButtonElement} */ ($('btnSound'))
   const anySound = overlays.some(o => o.hasSound)
   sound.disabled = !anySound
   sound.textContent = t(muted ? 'soundOff' : 'soundOn')
@@ -64,18 +68,21 @@ async function start () {
   try {
     // Lo pesado (MindAR + three) se baja al abrir la cámara, no al abrir la app.
     const [{ startTracker }, { createOverlay }] = await Promise.all([import('../ar/tracker.js'), import('../ar/overlay.js')])
-    const targets = mergeTargets(await Promise.all(works.map(w => getBlob(w.target).then(b => b.arrayBuffer()))))
-    tracker = await startTracker({
+    const list = works
+    if (!list) throw new Error('the works are not loaded yet')
+    const targets = mergeTargets(await Promise.all(list.map(w => getBlob(w.target).then(b => b.arrayBuffer()))))
+    const tr = await startTracker({
       container: $('stage'),
       targets,
       onFound: i => { found = i; overlays[i]?.show(); render() },
       onLost: i => { if (found === i) found = -1; overlays[i]?.hide(); render() },
       onFrame: dt => { for (const o of overlays) o.tick(dt) }
     })
-    overlays = await Promise.all(works.map(async (w, i) => {
-      const overlay = await createOverlay({ blob: await getBlob(w.overlay), kind: w.overlay.kind, aspect: tracker.anchors[i].aspect })
+    tracker = tr
+    overlays = await Promise.all(list.map(async (w, i) => {
+      const overlay = await createOverlay({ blob: await getBlob(w.overlay), kind: w.overlay.kind, aspect: tr.anchors[i].aspect })
       overlay.setMuted(muted)
-      tracker.anchors[i].group.add(overlay.mesh)
+      tr.anchors[i].group.add(overlay.mesh)
       return overlay
     }))
     state = 'running'

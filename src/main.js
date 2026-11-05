@@ -23,12 +23,15 @@ window.addEventListener('unhandledrejection', e =>
   toast(t('unexpectedError', { reason: e.reason?.message || String(e.reason) }), 'error'))
 
 const topbar = document.querySelector('dotrino-topbar')
+if (!topbar) throw new Error('missing <dotrino-topbar> in index.html')
 const install = topbar.querySelector('dotrino-install')
+if (!install) throw new Error('missing <dotrino-install> in the topbar')
 // El controlador de «volver» ya lo instaló el topbar: se reusa ese.
 if (!getBackNav()) createBackNav()
 
 // ---------- pestañas ----------
 
+/** @type {string[]} */
 const TABS = ['view', 'works']
 // La pestaña sobrevive a un refresco, pero abrir la app de cero vuelve a «Ver» (§4).
 const TAB_KEY = 'ar.tab'
@@ -36,12 +39,13 @@ const TAB_KEY = 'ar.tab'
 function readTab () {
   try {
     const v = sessionStorage.getItem(TAB_KEY)
-    return TABS.includes(v) ? v : 'view'
+    return v !== null && TABS.includes(v) ? v : 'view'
   } catch {
     return 'view' // sin sessionStorage (modo privado): la pestaña por defecto
   }
 }
 
+/** @param {string} name */
 function setTab (name) {
   if (!TABS.includes(name)) throw new Error(`unknown tab: ${name}`)
   for (const tab of TABS) {

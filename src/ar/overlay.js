@@ -8,20 +8,23 @@ const FADE_SECONDS = 0.35
  */
 export async function createOverlay ({ blob, kind, aspect }) {
   const url = URL.createObjectURL(blob)
+  /** @type {Texture} */
   let texture
+  /** @type {HTMLVideoElement | null} */
   let video = null
   if (kind === 'video') {
-    video = document.createElement('video')
-    video.setAttribute('playsinline', '')
-    video.loop = true
-    video.muted = true
-    video.src = url
+    const v = document.createElement('video')
+    video = v
+    v.setAttribute('playsinline', '')
+    v.loop = true
+    v.muted = true
+    v.src = url
     await new Promise((resolve, reject) => {
-      video.addEventListener('loadeddata', resolve, { once: true })
-      video.addEventListener('error', () =>
+      v.addEventListener('loadeddata', resolve, { once: true })
+      v.addEventListener('error', () =>
         reject(Object.assign(new Error('this video format cannot be played here'), { code: 'bad-video' })), { once: true })
     })
-    texture = new VideoTexture(video)
+    texture = new VideoTexture(v)
   } else if (kind === 'image') {
     texture = new Texture(await createImageBitmap(blob, { imageOrientation: 'flipY' }))
     texture.needsUpdate = true
@@ -41,14 +44,16 @@ export async function createOverlay ({ blob, kind, aspect }) {
     hasSound: kind === 'video',
     show () {
       shown = true
-      if (video) video.play().catch(e => console.warn('[ar] overlay video did not start:', e.message))
+      if (video) video.play().catch(e => console.warn('[ar] overlay video did not start:', /** @type {{ message?: string }} */ (e).message))
     },
     hide () {
       shown = false
       material.opacity = 0
       if (video) video.pause()
     },
+    /** @param {boolean} muted */
     setMuted (muted) { if (video) video.muted = muted },
+    /** @param {number} dt seconds since the last frame */
     tick (dt) {
       if (shown && material.opacity < 1) material.opacity = Math.min(1, material.opacity + dt / FADE_SECONDS)
     },

@@ -12,12 +12,20 @@ import { putLocal, getLocal, removeLocal } from '@dotrino/content-client/local'
 import { getIdentity } from '../services/identity.js'
 
 // El node de esta sesión: se intenta una vez; sin node se sigue con lo del aparato.
-const session = nodeSession(getIdentity, { onError: (e) => console.warn('[ar] content node unreachable:', e?.message || e) })
+const session = nodeSession(getIdentity, { onError: (e) => console.warn('[ar] content node unreachable:', /** @type {{ message?: string } | null | undefined} */ (e)?.message || e) })
 const userNode = () => session.node()
 
 /**
+ * Una copia de un archivo: en el aparato siempre, y en el node del usuario si lo hay.
+ *
+ * @typedef {{ cid: string, mime: string, size: number, remote?: { owner: string, cid: string, key: string|null } }} BlobEntry
+ */
+
+/**
  * Guarda un archivo de una obra.
- * @returns {Promise<{ cid: string, mime: string, size: number, remote?: { owner: string, cid: string, key: string|null } }>}
+ *
+ * @param {Blob} blob
+ * @returns {Promise<BlobEntry>}
  */
 export async function putBlob (blob) {
   const local = await putLocal(blob)
@@ -26,18 +34,24 @@ export async function putBlob (blob) {
   try {
     const ref = await n.put(new Uint8Array(await blob.arrayBuffer()), { mime: local.mime })
     return { ...local, remote: { owner: ref.owner, cid: ref.cid, key: ref.key } }
-  } catch (e) {
+  } catch (caught) {
+    const e = /** @type {{ code?: string, message?: string } | null | undefined} */ (caught)
     if (e?.code !== 'too-large') console.warn('[ar] could not copy to the content node:', e?.message || e)
     return local
   }
 }
 
-/** Los bytes de un archivo: del aparato y, si aquí no están, del node del usuario. */
+/**
+ * Los bytes de un archivo: del aparato y, si aquí no están, del node del usuario.
+ *
+ * @param {BlobEntry} entry
+ * @returns {Promise<Blob>}
+ */
 export async function getBlob (entry) {
   try {
     return await getLocal(entry.cid)
   } catch (e) {
-    if (e?.code !== 'local-missing' || !entry.remote) throw e
+    if (/** @type {{ code?: string } | null | undefined} */ (e)?.code !== 'local-missing' || !entry.remote) throw e
     const n = await userNode()
     if (!n) throw Object.assign(new Error(`blob ${entry.cid} is not on this device and no content node answered`), { code: 'blob-missing' })
     const bytes = await n.get(entry.remote)
@@ -47,6 +61,7 @@ export async function getBlob (entry) {
   }
 }
 
+/** @param {BlobEntry} entry */
 export async function removeBlob (entry) {
   await removeLocal(entry.cid)
   if (!entry.remote) return

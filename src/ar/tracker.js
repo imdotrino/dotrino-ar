@@ -4,6 +4,10 @@
 import { Controller } from 'mind-ar/dist/mindar-image.prod.js'
 import { Group, Matrix4, PerspectiveCamera, Quaternion, Scene, Vector3, WebGLRenderer } from 'three'
 
+/**
+ * @param {string} code
+ * @param {string} msg
+ */
 const err = (code, msg) => Object.assign(new Error(msg), { code })
 
 async function openCamera () {
@@ -11,9 +15,10 @@ async function openCamera () {
   let stream
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'environment' } })
-  } catch (e) {
+  } catch (caught) {
+    const e = /** @type {{ name?: string, message?: string }} */ (caught)
     const code = e.name === 'NotAllowedError' ? 'camera-denied' : e.name === 'NotFoundError' ? 'no-camera' : 'camera-failed'
-    throw err(code, e.message || e.name)
+    throw err(code, e.message || e.name || 'camera error')
   }
   const video = document.createElement('video')
   video.setAttribute('playsinline', '')
@@ -54,8 +59,9 @@ export async function startTracker ({ container, targets, onFound, onLost, onFra
   const inputWidth = video.videoWidth
   const inputHeight = video.videoHeight
 
-  /** @type {{ group: Group, visible: boolean }[]} */
+  /** @type {{ group: Group, visible: boolean, aspect: number }[]} */
   const anchors = []
+  /** @type {Matrix4[]} */
   let postMatrices = []
 
   const controller = new Controller({
@@ -66,10 +72,11 @@ export async function startTracker ({ container, targets, onFound, onLost, onFra
       if (data.type !== 'updateMatrix') return
       const anchor = anchors[data.targetIndex]
       if (!anchor) return
-      const seen = data.worldMatrix !== null
+      const world = data.worldMatrix
+      const seen = world !== null
       if (seen) {
         const m = new Matrix4()
-        m.elements = [...data.worldMatrix]
+        m.elements = /** @type {import('three').Matrix4Tuple} */ ([...world])
         m.multiply(postMatrices[data.targetIndex])
         anchor.group.matrix = m
       }
@@ -105,7 +112,8 @@ export async function startTracker ({ container, targets, onFound, onLost, onFra
   }
   resize()
 
-  const { dimensions } = controller.addImageTargetsFromBuffer(targets.buffer.slice(targets.byteOffset, targets.byteOffset + targets.byteLength))
+  // msgpack's encoder writes into a plain ArrayBuffer, never a shared one.
+  const { dimensions } = controller.addImageTargetsFromBuffer(/** @type {ArrayBuffer} */ (targets.buffer.slice(targets.byteOffset, targets.byteOffset + targets.byteLength)))
   // En el espacio de cada obra la unidad es su ANCHO y el origen su centro: un plano de
   // 1 × (alto/ancho) la tapa justo.
   postMatrices = dimensions.map(([w, h]) =>

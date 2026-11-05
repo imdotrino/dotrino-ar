@@ -55,19 +55,28 @@ const DICT = {
   }
 }
 
+/** @type {'es'|'en'} */
 let lang = 'en'
 
+/** Lee el idioma que dejó el topbar en <html lang>. */
 export function initLang () {
   lang = document.documentElement.lang === 'es' ? 'es' : 'en'
 }
+/** @returns {'es'|'en'} */
 export const getLang = () => lang
+/** @param {string} l */
 export function setLang (l) {
-  if (!DICT[l]) throw new Error(`unknown language: ${l}`)
+  if (l !== 'es' && l !== 'en') throw new Error(`unknown language: ${l}`)
   lang = l
 }
 
+/**
+ * @param {string} key
+ * @param {Record<string, string|number>} [vars]
+ * @returns {string}
+ */
 export function t (key, vars = {}) {
-  const s = DICT[lang][key]
+  const s = /** @type {Record<string, string>} */ (DICT[lang])[key]
   if (s === undefined) throw new Error(`missing text: ${key}`)
   return s.replace(/\{(\w+)\}/g, (_, k) => {
     if (vars[k] === undefined) throw new Error(`missing value {${k}} for text ${key}`)
@@ -76,14 +85,20 @@ export function t (key, vars = {}) {
 }
 
 /** El texto de un error conocido (por su `code`), o su mensaje si no lo es. */
+/**
+ * @param {unknown} e
+ * @returns {string}
+ */
 export function reasonOf (e) {
-  const key = 'err_' + String(e?.code || '').replace(/-/g, '_')
-  return DICT[lang][key] || e?.message || String(e)
+  const err = /** @type {{ code?: string, message?: string } | null | undefined} */ (e)
+  const key = 'err_' + String(err?.code || '').replace(/-/g, '_')
+  return /** @type {Record<string, string>} */ (DICT[lang])[key] || err?.message || String(e)
 }
 
 /** Aplica los textos fijos del HTML (data-i18n, -aria, -title, -ph). */
 export function applyStatic () {
-  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n)
-  for (const el of document.querySelectorAll('[data-i18n-aria]')) el.setAttribute('aria-label', t(el.dataset.i18nAria))
-  for (const el of document.querySelectorAll('[data-i18n-ph]')) el.setAttribute('placeholder', t(el.dataset.i18nPh))
+  // The selector guarantees the data attribute is there.
+  for (const el of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('[data-i18n]'))) el.textContent = t(/** @type {string} */ (el.dataset.i18n))
+  for (const el of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('[data-i18n-aria]'))) el.setAttribute('aria-label', t(/** @type {string} */ (el.dataset.i18nAria)))
+  for (const el of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('[data-i18n-ph]'))) el.setAttribute('placeholder', t(/** @type {string} */ (el.dataset.i18nPh)))
 }

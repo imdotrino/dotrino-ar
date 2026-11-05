@@ -6,8 +6,20 @@ import { putBlob, removeBlob } from './blobs.js'
 
 const THREAD = 'ar.works'
 
+/**
+ * @typedef {object} Work
+ * @property {string} id
+ * @property {string} title
+ * @property {number} createdAt
+ * @property {import('./blobs.js').BlobEntry} photo
+ * @property {import('./blobs.js').BlobEntry & { width: number, height: number }} target
+ * @property {import('./blobs.js').BlobEntry & { kind: 'image'|'video' }} overlay
+ */
+
+/** @type {Promise<Store> | null} */
 let connecting = null
 
+/** @returns {Promise<Store>} el almacén, atado al perfil */
 export function openStore () {
   if (!connecting) {
     connecting = getIdentity().then(identity => {
@@ -21,23 +33,25 @@ export function openStore () {
   return connecting
 }
 
-/** @returns {Promise<object[]>} las obras, de la más antigua a la más nueva */
+/** @returns {Promise<Work[]>} las obras, de la más antigua a la más nueva */
 export async function listWorks () {
   const store = await openStore()
   const entries = await store.listThread(THREAD)
   return entries.map(e => {
     if (!e.doc) throw new Error(`entry ${e.id} in ${THREAD} has no document`)
-    return e.doc
+    return /** @type {Work} */ (e.doc)
   }).sort((a, b) => a.createdAt - b.createdAt)
 }
 
 /**
- * @param {{ title: string, photo: Blob, target: { data: Uint8Array, width: number, height: number }, overlay: Blob }} input
+ * @param {{ title: string, photo: Blob, target: { data: Uint8Array<ArrayBuffer>, width: number, height: number }, overlay: Blob }} input
+ * @returns {Promise<Work>}
  */
 export async function addWork ({ title, photo, target, overlay }) {
   const kind = overlay.type.startsWith('video/') ? 'video' : overlay.type.startsWith('image/') ? 'image' : null
   if (!kind) throw Object.assign(new Error(`unsupported overlay type: ${overlay.type || 'unknown'}`), { code: 'bad-overlay' })
   const store = await openStore()
+  /** @type {Work} */
   const work = {
     id: crypto.randomUUID(),
     title,
@@ -50,6 +64,7 @@ export async function addWork ({ title, photo, target, overlay }) {
   return work
 }
 
+/** @param {Work} work */
 export async function removeWork (work) {
   const store = await openStore()
   await store.removeMessage(THREAD, work.id)

@@ -7,8 +7,14 @@ import { decode, encode } from '@msgpack/msgpack'
 // Versión del formato que entiende mind-ar 1.2.x (CURRENT_VERSION en compiler-base.js).
 export const TARGET_FORMAT = 2
 
+/** @typedef {{ targetImage: { width: number, height: number } }} TargetEntry */
+
+/**
+ * @param {ArrayBuffer} buffer
+ * @returns {TargetEntry[]}
+ */
 function entriesOf (buffer) {
-  const pack = decode(new Uint8Array(buffer))
+  const pack = /** @type {{ v?: unknown, dataList?: TargetEntry[] } | null} */ (decode(new Uint8Array(buffer)))
   if (!pack || pack.v !== TARGET_FORMAT) {
     throw Object.assign(new Error(`unsupported target format: ${pack?.v}`), { code: 'bad-target' })
   }
@@ -37,7 +43,12 @@ export function mergeTargets (buffers) {
   return encode({ v: TARGET_FORMAT, dataList })
 }
 
-/** Ancho y alto con los que se preparó cada imagen del paquete. */
+/**
+ * Ancho y alto con los que se preparó cada imagen del paquete.
+ *
+ * @param {ArrayBuffer} buffer
+ * @returns {{ width: number, height: number }[]}
+ */
 export function targetSizes (buffer) {
   return entriesOf(buffer).map(e => ({ width: e.targetImage.width, height: e.targetImage.height }))
 }
